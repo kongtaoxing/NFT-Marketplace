@@ -25,7 +25,10 @@ const _creat2 = await contract.createToken("", 10, {value:hre.ethers.utils.parse
 console.log("Create and list successfully!");
 
 const listed = await contract.getAllNFTs();
-console.log(listed);
+console.log("All NFTs", listed);
+
+const myNFT = await contract.getMyNFTs();
+console.log("My NFTs", myNFT);
 
 // const _change = await contract.changeOwner(owner.address);
 // // Now you can call functions of the contract
