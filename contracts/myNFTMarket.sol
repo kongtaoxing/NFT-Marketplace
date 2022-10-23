@@ -58,6 +58,10 @@ contract NFTMarket {
         return _listedPrice[_NFTContract][_tokenId];
     }
 
+    function getOwner(address _NFTContract, uint256 _tokenId) public view returns(address) {
+        return _isOwner[_NFTContract][_tokenId];
+    }
+
     function buyNFT(address _NFTContract, uint256 _tokenId) public payable {
         if(msg.sender.balance < _listedPrice[_NFTContract][_tokenId]) {
             revert insufficientBalance();
