@@ -48,6 +48,9 @@ contract NFTMarket {
         }
         //NFTContract(_NFTContract).transferFrom(address(this), msg.sender, _tokenId);
         _listStatus[_NFTContract][_tokenId] = false;
+        _isOwner[_NFTContract][_tokenId] = address(0);
+        _listedPrice[_NFTContract][_tokenId] = 0;
+        
     }
 
     function getListStatus(address _NFTContract, uint256 _tokenId) public view returns (bool){
@@ -63,7 +66,7 @@ contract NFTMarket {
     }
 
     function buyNFT(address _NFTContract, uint256 _tokenId) public payable {
-        if(msg.sender.balance < _listedPrice[_NFTContract][_tokenId]) {
+        if(msg.value < _listedPrice[_NFTContract][_tokenId]) {
             revert insufficientBalance();
         }
         if(!_listStatus[_NFTContract][_tokenId]) {
@@ -72,5 +75,7 @@ contract NFTMarket {
         payable(_isOwner[_NFTContract][_tokenId]).transfer(msg.value);
         NFTContract(_NFTContract).transferFrom(_isOwner[_NFTContract][_tokenId], msg.sender, _tokenId);
         _listStatus[_NFTContract][_tokenId] = false;
+        _isOwner[_NFTContract][_tokenId] = address(0);
+        _listedPrice[_NFTContract][_tokenId] = 0;
     }
 }
