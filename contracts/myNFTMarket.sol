@@ -75,7 +75,6 @@ contract NFTMarket {
             revert notListed();
         }
         payable(_isOwner[_NFTContract][_tokenId]).transfer(msg.value * 9 / 10);
-        payable(address(this)).transfer(msg.value / 10);
         NFTContract(_NFTContract).transferFrom(_isOwner[_NFTContract][_tokenId], msg.sender, _tokenId);
         _listStatus[_NFTContract][_tokenId] = false;
         _isOwner[_NFTContract][_tokenId] = address(0);
@@ -84,6 +83,10 @@ contract NFTMarket {
 
     function withdraw() onlyOwner public {
         payable(msg.sender).transfer(address(this).balance);
+    }
+
+    function getOwner() public view returns (address) {
+        return owner;
     }
 
     function changeOwner(address _newOwner) onlyOwner public {

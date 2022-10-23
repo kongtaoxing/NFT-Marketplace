@@ -38,6 +38,9 @@ const main = async () => {
 
     console.log(hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(guy.address)));
     console.log(hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(randomGuy.address)));
+
+    const _2 = await nftContract.connect(randomGuy).mint();
+    const _2l = await marketContract.connect(randomGuy).listNFT(nftContract.address, 2, hre.ethers.utils.parseEther('0.01'));
 }
 
 const runMain = async () => {
