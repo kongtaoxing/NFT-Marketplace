@@ -33,7 +33,7 @@ contract NFTMarket {
         if(NFTContract(_NFTContract).ownerOf(_tokenId) != msg.sender) {
             revert notOwner();
         }
-        NFTContract(_NFTContract).transferFrom(msg.sender, address(this), _tokenId);
+        //NFTContract(_NFTContract).transferFrom(msg.sender, address(this), _tokenId);
         _listedPrice[_NFTContract][_tokenId] = _price;
         _listStatus[_NFTContract][_tokenId] = true;
         _isOwner[_NFTContract][_tokenId] = msg.sender;
@@ -46,7 +46,7 @@ contract NFTMarket {
         if(!_listStatus[_NFTContract][_tokenId]) {
             revert notListed();
         }
-        NFTContract(_NFTContract).transferFrom(address(this), msg.sender, _tokenId);
+        //NFTContract(_NFTContract).transferFrom(address(this), msg.sender, _tokenId);
         _listStatus[_NFTContract][_tokenId] = false;
     }
 
@@ -65,5 +65,8 @@ contract NFTMarket {
         if(!_listStatus[_NFTContract][_tokenId]) {
             revert notListed();
         }
+        payable(_isOwner[_NFTContract][_tokenId]).transfer(msg.value);
+        NFTContract(_NFTContract).transferFrom(_isOwner[_NFTContract][_tokenId], msg.sender, _tokenId);
+        _listStatus[_NFTContract][_tokenId] = false;
     }
 }
