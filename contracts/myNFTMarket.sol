@@ -15,15 +15,12 @@ contract NFTMarket {
 
     error notApproved();
     error notOwner();
-
-    struct NFTListed {
-        bool isList;
-        address _contract;
-        address payable _owner;
-        uint256 _price;
-    }
-    mapping(address => NFTListed) Status;
-    mapping (uint256 => uint256) _listedPrice;
+    error insufficientBalance();
+    error notListed();
+    
+    mapping(address => mapping(uint256 => bool)) _listStatus;
+    mapping(address => mapping(uint256 => uint256)) _listedPrice;
+    mapping(address => mapping(uint256 => address)) _isOwner;
 
     constructor() {
         console.log("NFTMarket deployed");
@@ -37,6 +34,36 @@ contract NFTMarket {
             revert notOwner();
         }
         NFTContract(_NFTContract).transferFrom(msg.sender, address(this), _tokenId);
+        _listedPrice[_NFTContract][_tokenId] = _price;
+        _listStatus[_NFTContract][_tokenId] = true;
+        _isOwner[_NFTContract][_tokenId] = msg.sender;
+    }
 
+    function delistNFT(address _NFTContract, uint256 _tokenId) public {
+        if(_isOwner[_NFTContract][_tokenId] != msg.sender) {
+            revert notOwner();
+        }
+        if(!_listStatus[_NFTContract][_tokenId]) {
+            revert notListed();
+        }
+        NFTContract(_NFTContract).transferFrom(address(this), msg.sender, _tokenId);
+        _listStatus[_NFTContract][_tokenId] = false;
+    }
+
+    function getListStatus(address _NFTContract, uint256 _tokenId) public view returns (bool){
+        return _listStatus[_NFTContract][_tokenId];
+    }
+
+    function getListPrice(address _NFTContract, uint256 _tokenId) public view returns (uint256) {
+        return _listedPrice[_NFTContract][_tokenId];
+    }
+
+    function buyNFT(address _NFTContract, uint256 _tokenId) public payable {
+        if(msg.sender.balance < _listedPrice[_NFTContract][_tokenId]) {
+            revert insufficientBalance();
+        }
+        if(!_listStatus[_NFTContract][_tokenId]) {
+            revert notListed();
+        }
     }
 }
