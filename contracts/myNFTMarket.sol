@@ -10,8 +10,9 @@ interface NFTContract {
     function ownerOf(uint256 _tokenId) external view returns (address);
 }
 
-
 contract NFTMarket {
+
+    address owner;
 
     error notApproved();
     error notOwner();
@@ -24,6 +25,7 @@ contract NFTMarket {
 
     constructor() {
         console.log("NFTMarket deployed");
+        owner = msg.sender;
     }
 
     function listNFT(address _NFTContract, uint256 _tokenId, uint256 _price) public {
@@ -72,10 +74,26 @@ contract NFTMarket {
         if(!_listStatus[_NFTContract][_tokenId]) {
             revert notListed();
         }
-        payable(_isOwner[_NFTContract][_tokenId]).transfer(msg.value);
+        payable(_isOwner[_NFTContract][_tokenId]).transfer(msg.value * 9 / 10);
+        payable(address(this)).transfer(msg.value / 10);
         NFTContract(_NFTContract).transferFrom(_isOwner[_NFTContract][_tokenId], msg.sender, _tokenId);
         _listStatus[_NFTContract][_tokenId] = false;
         _isOwner[_NFTContract][_tokenId] = address(0);
         _listedPrice[_NFTContract][_tokenId] = 0;
+    }
+
+    function withdraw() onlyOwner public {
+        payable(msg.sender).transfer(address(this).balance);
+    }
+
+    function changeOwner(address _newOwner) onlyOwner public {
+        owner = _newOwner;
+    }
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) {
+            revert notOwner();
+        }
+        _;
     }
 }
