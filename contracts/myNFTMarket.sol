@@ -4,10 +4,16 @@ pragma solidity ^0.8.17;
 import "hardhat/console.sol";
 
 interface NFTContract {
+    //basic NFT function
     function setApprovalForAll(address _operator, bool _approved) external;
     function isApprovedForAll(address _owner, address _operator) external view returns (bool);
     function transferFrom(address _from, address _to, uint256 _tokenId) external payable;
     function ownerOf(uint256 _tokenId) external view returns (address);
+
+    //Get NFT's detail
+    function name() external view returns (string calldata _name);
+    function symbol() external view returns (string calldata _symbol);
+    function tokenURI(uint256 _tokenId) external view returns (string calldata);
 }
 
 contract NFTMarket {
@@ -18,6 +24,12 @@ contract NFTMarket {
     error notOwner();
     error insufficientBalance();
     error notListed();
+
+    struct NFTDetail {
+        string _name;
+        string _symbol;
+        string _tokenURI;
+    }
     
     mapping(address => mapping(uint256 => bool)) _listStatus;
     mapping(address => mapping(uint256 => uint256)) _listedPrice;
@@ -79,6 +91,16 @@ contract NFTMarket {
         _listStatus[_NFTContract][_tokenId] = false;
         _isOwner[_NFTContract][_tokenId] = address(0);
         _listedPrice[_NFTContract][_tokenId] = 0;
+    }
+
+    function getNFTDetail(address _NFTContract, uint256 _amounts) public view returns (NFTDetail[] memory) {
+        NFTDetail[] memory _detail = new NFTDetail[](_amounts);
+        for (uint256 i = 0; i < _amounts; i++) {
+            _detail[i]._name = NFTContract(_NFTContract).name();
+            _detail[i]._symbol = NFTContract(_NFTContract).symbol();
+            _detail[i]._tokenURI = NFTContract(_NFTContract).tokenURI(i);
+        }
+        return _detail;
     }
 
     function withdraw() onlyOwner public {
