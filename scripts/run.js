@@ -1,7 +1,7 @@
 const { hexConcat } = require("ethers/lib/utils");
 
 const main = async () => {
-    const [guy, randomGuy] = await hre.ethers.getSigners();
+    const [guy, randomGuy, attacker] = await hre.ethers.getSigners();
 
     const nftContractFactory = await hre.ethers.getContractFactory("testNFT");
     const nftContract = await nftContractFactory.deploy();
@@ -43,8 +43,27 @@ const main = async () => {
     const _2apv = await nftContract.connect(randomGuy).setApprovalForAll(marketContract.address, true);
     const _2l = await marketContract.connect(randomGuy).listNFT(nftContract.address, 2, hre.ethers.utils.parseEther('0.01'));
 
-    const _detail = await marketContract.getNFTsDetail(nftContract.address);
+    const _detail = await marketContract.getNFTsDetail(nftContract.address, 3);
     console.log(_detail);
+
+    const __mintNFT = await nftContract.mint();
+    await __mintNFT.wait();
+
+    const EIP712Domain = [  
+        { name: "name", type: "string" },  
+        { name: "version", type: "string" },  
+        { name: "chainId", type: "uint256" },  
+        { name: "verifyingContract", type: "address" },
+    ];
+ 
+    const { chainId } = library.network;
+    const _domain = {    
+        name: nftContract.address,    
+        version: "1",    
+        chainId,    
+        verifyingContract: nftContract.address 
+ };
+    
 }
 
 const runMain = async () => {

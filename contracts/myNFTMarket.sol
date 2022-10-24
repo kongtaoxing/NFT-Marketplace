@@ -54,6 +54,19 @@ contract NFTMarket {
         _isOwner[_NFTContract][_tokenId] = msg.sender;
     }
 
+    function signToListNFT(address _NFTContract, uint256 _tokenId, uint256 _price) public {
+        if(!NFTContract(_NFTContract).isApprovedForAll(msg.sender, address(this))) {
+            revert notApproved();
+        }
+        if(NFTContract(_NFTContract).ownerOf(_tokenId) != msg.sender) {
+            revert notOwner();
+        }
+        //NFTContract(_NFTContract).transferFrom(msg.sender, address(this), _tokenId);
+        _listedPrice[_NFTContract][_tokenId] = _price;
+        _listStatus[_NFTContract][_tokenId] = true;
+        _isOwner[_NFTContract][_tokenId] = msg.sender;
+    }
+
     function delistNFT(address _NFTContract, uint256 _tokenId) public {
         if(_isOwner[_NFTContract][_tokenId] != msg.sender) {
             revert notOwner();
