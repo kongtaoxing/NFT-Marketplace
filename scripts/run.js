@@ -23,24 +23,28 @@ const main = async () => {
     console.log("Price of #0:", await marketContract.getListPrice(nftContract.address, 0));
     console.log("Price of #1:", await marketContract.getListPrice(nftContract.address, 1));
 
-    const _0ow = await marketContract.getOwner(nftContract.address, 0);
+    const _0ow = await marketContract.getNFTOwner(nftContract.address, 0);
     console.log("NFT#0's owner is", _0ow);
 
-    const _1ow = await marketContract.getOwner(nftContract.address, 1);
+    const _1ow = await marketContract.getNFTOwner(nftContract.address, 1);
     console.log("NFT#1's owner is", _1ow);
 
     const _1status = await marketContract.getListStatus(nftContract.address, 1);
     console.log("NFT#1 listed status:", _1status);
 
     const _buy = await marketContract.connect(randomGuy).buyNFT(nftContract.address, 1, {value: hre.ethers.utils.parseEther('1')});
-    const _1own = await marketContract.getOwner(nftContract.address, 1);
+    const _1own = await marketContract.getNFTOwner(nftContract.address, 1);
     console.log("NFT#1's owner is", _1own);
 
     console.log(hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(guy.address)));
     console.log(hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(randomGuy.address)));
 
     const _2 = await nftContract.connect(randomGuy).mint();
+    const _2apv = await nftContract.connect(randomGuy).setApprovalForAll(marketContract.address, true);
     const _2l = await marketContract.connect(randomGuy).listNFT(nftContract.address, 2, hre.ethers.utils.parseEther('0.01'));
+
+    const _detail = await marketContract.getNFTsDetail(nftContract.address);
+    console.log(_detail);
 }
 
 const runMain = async () => {

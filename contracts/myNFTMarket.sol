@@ -14,6 +14,7 @@ interface NFTContract {
     function name() external view returns (string calldata _name);
     function symbol() external view returns (string calldata _symbol);
     function tokenURI(uint256 _tokenId) external view returns (string calldata);
+    function totalSupply() external view returns(uint256);
 }
 
 contract NFTMarket {
@@ -75,7 +76,7 @@ contract NFTMarket {
         return _listedPrice[_NFTContract][_tokenId];
     }
 
-    function getOwner(address _NFTContract, uint256 _tokenId) public view returns(address) {
+    function getNFTOwner(address _NFTContract, uint256 _tokenId) public view returns(address) {
         return _isOwner[_NFTContract][_tokenId];
     }
 
@@ -93,7 +94,8 @@ contract NFTMarket {
         _listedPrice[_NFTContract][_tokenId] = 0;
     }
 
-    function getNFTDetail(address _NFTContract, uint256 _amounts) public view returns (NFTDetail[] memory) {
+    function getNFTsDetail(address _NFTContract, uint256 _amounts) public view returns (NFTDetail[] memory) {
+        //uint256 _amounts = NFTContract(_NFTContract).totalSupply();
         NFTDetail[] memory _detail = new NFTDetail[](_amounts);
         for (uint256 i = 0; i < _amounts; i++) {
             _detail[i]._name = NFTContract(_NFTContract).name();
@@ -107,7 +109,7 @@ contract NFTMarket {
         payable(msg.sender).transfer(address(this).balance);
     }
 
-    function getOwner() public view returns (address) {
+    function getContractOwner() public view returns (address) {
         return owner;
     }
 
