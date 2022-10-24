@@ -25,6 +25,7 @@ contract NFTMarket {
     error notOwner();
     error insufficientBalance();
     error notListed();
+    error mustBiggerThanZero();
 
     struct NFTDetail {
         string _name;
@@ -48,24 +49,37 @@ contract NFTMarket {
         if(NFTContract(_NFTContract).ownerOf(_tokenId) != msg.sender) {
             revert notOwner();
         }
+        if (_price <= 0) revert mustBiggerThanZero();
         //NFTContract(_NFTContract).transferFrom(msg.sender, address(this), _tokenId);
         _listedPrice[_NFTContract][_tokenId] = _price;
         _listStatus[_NFTContract][_tokenId] = true;
         _isOwner[_NFTContract][_tokenId] = msg.sender;
     }
 
-    function signToListNFT(address _NFTContract, uint256 _tokenId, uint256 _price) public {
+    function updatePrice(address _NFTContract, uint256 _tokenId, uint256 _newPrice) public {
         if(!NFTContract(_NFTContract).isApprovedForAll(msg.sender, address(this))) {
             revert notApproved();
         }
         if(NFTContract(_NFTContract).ownerOf(_tokenId) != msg.sender) {
             revert notOwner();
         }
-        //NFTContract(_NFTContract).transferFrom(msg.sender, address(this), _tokenId);
-        _listedPrice[_NFTContract][_tokenId] = _price;
-        _listStatus[_NFTContract][_tokenId] = true;
-        _isOwner[_NFTContract][_tokenId] = msg.sender;
+        if (_newPrice <= 0) revert mustBiggerThanZero();
+        if (!_listStatus[_NFTContract][_tokenId]) revert notListed();
+        _listedPrice[_NFTContract][_tokenId] = _newPrice;
     }
+
+    // function signToListNFT(address _NFTContract, uint256 _tokenId, uint256 _price) public {
+    //     if(!NFTContract(_NFTContract).isApprovedForAll(msg.sender, address(this))) {
+    //         revert notApproved();
+    //     }
+    //     if(NFTContract(_NFTContract).ownerOf(_tokenId) != msg.sender) {
+    //         revert notOwner();
+    //     }
+    //     //NFTContract(_NFTContract).transferFrom(msg.sender, address(this), _tokenId);
+    //     _listedPrice[_NFTContract][_tokenId] = _price;
+    //     _listStatus[_NFTContract][_tokenId] = true;
+    //     _isOwner[_NFTContract][_tokenId] = msg.sender;
+    // }
 
     function delistNFT(address _NFTContract, uint256 _tokenId) public {
         if(_isOwner[_NFTContract][_tokenId] != msg.sender) {
@@ -101,6 +115,7 @@ contract NFTMarket {
             revert notListed();
         }
         payable(_isOwner[_NFTContract][_tokenId]).transfer(msg.value * 9 / 10);
+        payable(msg.sender).transfer(msg.value - _listedPrice[_NFTContract][_tokenId]);   //退回多余的ETH
         NFTContract(_NFTContract).transferFrom(_isOwner[_NFTContract][_tokenId], msg.sender, _tokenId);
         _listStatus[_NFTContract][_tokenId] = false;
         _isOwner[_NFTContract][_tokenId] = address(0);
@@ -116,6 +131,24 @@ contract NFTMarket {
             _detail[i]._tokenURI = NFTContract(_NFTContract).tokenURI(i);
         }
         return _detail;
+    }
+
+    function getListedTokenId(address _NFTContract, uint256 _totalAmount) public view returns (uint256[] memory) {
+        uint256 _listed = 0;
+        for (uint256 i = 0; i < _totalAmount; i++) {
+            if (_listStatus[_NFTContract][i] == true) {
+                _listed++;
+            } 
+        }
+        uint256[] memory _listedTokenId = new uint256[](_listed);
+        uint256 flag = 0;
+        for(uint256 i = 0; i < _totalAmount; i++) {
+            if (_listStatus[_NFTContract][i] == true) {
+                _listedTokenId[flag] = i;
+                flag++;
+            }
+        }
+        return _listedTokenId;
     }
 
     function withdraw() onlyOwner public {
