@@ -66,11 +66,11 @@ const main = async () => {
     // };
 
     const __list = await marketContract.listNFT(nftContract.address, 3, ethwei.parseEther('1'));
-    console.log('listed');
+    console.log('listed, price: ', await marketContract.getListPrice(nftContract.address, 3));
     const _updatelist = await marketContract.updatePrice(nftContract.address, 3, ethwei.parseEther('10'))
-    console.log('updated');
+    console.log('updated, price:', await marketContract.getListPrice(nftContract.address, 3));
     const _buy_ = await marketContract.connect(randomGuy).buyNFT(nftContract.address, 3, {value: ethwei.parseEther('100')});
-    console.log('bought');
+    console.log('bought, owner of #3:', await nftContract.ownerOf(3));
 }
 
 const runMain = async () => {

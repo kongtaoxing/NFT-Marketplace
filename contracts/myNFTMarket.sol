@@ -40,6 +40,14 @@ contract NFTMarket {
     mapping(address => mapping(uint256 => uint256)) _listedPrice;
     mapping(address => mapping(uint256 => address)) _isOwner;
 
+    //Add events
+    event ListNFT(address indexed NFTContract, uint256 indexed tokenId, uint256 indexed price);
+    event UpdatePrice(address indexed NFTContract, uint256 indexed tokenId, uint256 indexed newPrice);
+    event DelistNFT(address indexed NFTContract, uint256 indexed tokenId);
+    event BuyNFT(address indexed buyer, address indexed NFTContract, uint256 indexed tokenId);
+
+    event ChangeOwner(address indexed newOwner);
+
     constructor() {
         console.log("NFTMarket deployed");
         owner = msg.sender;
@@ -57,6 +65,9 @@ contract NFTMarket {
         _listedPrice[_NFTContract][_tokenId] = _price;
         _listStatus[_NFTContract][_tokenId] = true;
         _isOwner[_NFTContract][_tokenId] = msg.sender;
+
+        //emit event
+        emit ListNFT(_NFTContract, _tokenId, _price);
     }
 
     function updatePrice(address _NFTContract, uint256 _tokenId, uint256 _newPrice) public {
@@ -69,6 +80,8 @@ contract NFTMarket {
         if (_newPrice <= 0) revert mustBiggerThanZero();
         if (!_listStatus[_NFTContract][_tokenId]) revert notListed();
         _listedPrice[_NFTContract][_tokenId] = _newPrice;
+
+        emit UpdatePrice(_NFTContract, _tokenId, _newPrice);
     }
 
     // function signToListNFT(address _NFTContract, uint256 _tokenId, uint256 _price) public {
@@ -95,6 +108,8 @@ contract NFTMarket {
         _listStatus[_NFTContract][_tokenId] = false;
         _isOwner[_NFTContract][_tokenId] = address(0);
         _listedPrice[_NFTContract][_tokenId] = 0;
+
+        emit DelistNFT(_NFTContract, _tokenId);
         
     }
 
@@ -123,6 +138,8 @@ contract NFTMarket {
         _listStatus[_NFTContract][_tokenId] = false;
         _isOwner[_NFTContract][_tokenId] = address(0);
         _listedPrice[_NFTContract][_tokenId] = 0;
+
+        emit BuyNFT(msg.sender, _NFTContract, _tokenId);
     }
 
     function getNFTsDetail(address _NFTContract, uint256 _amounts) public view returns (NFTDetail[] memory) {
@@ -167,6 +184,8 @@ contract NFTMarket {
 
     function changeOwner(address _newOwner) onlyOwner public {
         owner = _newOwner;
+
+        emit ChangeOwner(_newOwner);
     }
 
     modifier onlyOwner() {
