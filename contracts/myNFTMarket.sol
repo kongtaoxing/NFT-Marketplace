@@ -31,6 +31,9 @@ contract NFTMarket {
         string _name;
         string _symbol;
         string _tokenURI;
+        bool _listOrNot;
+        uint256 _price;
+        address _owner;
     }
     
     mapping(address => mapping(uint256 => bool)) _listStatus;
@@ -114,7 +117,7 @@ contract NFTMarket {
         if(!_listStatus[_NFTContract][_tokenId]) {
             revert notListed();
         }
-        payable(_isOwner[_NFTContract][_tokenId]).transfer(msg.value * 9 / 10);
+        payable(_isOwner[_NFTContract][_tokenId]).transfer(_listedPrice[_NFTContract][_tokenId] * 9 / 10);
         payable(msg.sender).transfer(msg.value - _listedPrice[_NFTContract][_tokenId]);   //退回多余的ETH
         NFTContract(_NFTContract).transferFrom(_isOwner[_NFTContract][_tokenId], msg.sender, _tokenId);
         _listStatus[_NFTContract][_tokenId] = false;
@@ -129,6 +132,9 @@ contract NFTMarket {
             _detail[i]._name = NFTContract(_NFTContract).name();
             _detail[i]._symbol = NFTContract(_NFTContract).symbol();
             _detail[i]._tokenURI = NFTContract(_NFTContract).tokenURI(i);
+            _detail[i]._listOrNot = _listStatus[_NFTContract][i];
+            _detail[i]._price = _listedPrice[_NFTContract][i];
+            _detail[i]._owner = NFTContract(_NFTContract).ownerOf(i);
         }
         return _detail;
     }
