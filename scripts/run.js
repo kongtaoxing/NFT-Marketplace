@@ -60,8 +60,7 @@ const main = async () => {
     const _mintNFT__ = await nftContract.mint();
     await _mintNFT__.wait();
 
-    const [signer] = await ethers.getSigners(); // 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-    const chainId = await signer.getChainId(); // 31337
+    const chainId = await guy.getChainId(); // 1337
     const nonce = 0;
     const name = "Gold";
     const version = "1";
@@ -71,7 +70,7 @@ const main = async () => {
     const deadline = 100;
 
     let sig = ethers.utils.splitSignature(
-        await signer._signTypedData(
+        await guy._signTypedData(
             {
             name,
             version,
@@ -103,7 +102,7 @@ const main = async () => {
             ],
             },
             {
-            owner: signer.address,
+            owner: guy.address,
             spender,
             value,
             nonce,
