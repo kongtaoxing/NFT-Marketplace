@@ -50,8 +50,18 @@ const main = async () => {
     const __mintNFT = await nftContract.mint();
     await __mintNFT.wait();
 
-    const chainId = await guy.getChainId(); // 1337
-    console.log('Chain ID:', chainId);
+    const __list = await marketContract.listNFT(nftContract.address, 3, ethwei.parseEther('1'));
+    console.log('listed, price: ', await marketContract.getListPrice(nftContract.address, 3));
+    const _updatelist = await marketContract.updatePrice(nftContract.address, 3, ethwei.parseEther('10'))
+    console.log('updated, price:', await marketContract.getListPrice(nftContract.address, 3));
+    const _buy_ = await marketContract.connect(randomGuy).buyNFT(nftContract.address, 3, {value: ethwei.parseEther('100')});
+    console.log('bought, owner of #3:', await nftContract.ownerOf(3));
+
+    const _mintNFT__ = await nftContract.mint();
+    await _mintNFT__.wait();
+
+    const [signer] = await ethers.getSigners(); // 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+    const chainId = await signer.getChainId(); // 31337
     const nonce = 0;
     const name = "Gold";
     const version = "1";
@@ -60,39 +70,48 @@ const main = async () => {
     const value = 1000;
     const deadline = 100;
 
-    const abi = ethers.utils.defaultAbiCoder;
-
-    const _PERMIT_TYPEHASH = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(
-        "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"));
-
-    const structHash = ethers.utils.keccak256(abi.encode(
-        ["bytes32", "address", "address", "uint256", "uint256", "uint256"],
-        [_PERMIT_TYPEHASH, guy.address, spender, value, nonce, deadline]));
-
-    const typeHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(
-        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"));
-    const nameHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(name));
-    const versionHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(version));
-    const domainSeparator = ethers.utils.keccak256(abi.encode(
-        ["bytes32", "bytes32", "bytes32", "uint256", "address"],
-        [typeHash, nameHash, versionHash, chainId, token]
-    ));
-
-    const typedDataHash = ethers.utils.keccak256(ethers.utils.solidityPack(
-        ["string", "bytes32", "bytes32"],
-        ["\x19\x01", domainSeparator, structHash]));
-
-    const privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-    const signingKey = new ethers.utils.SigningKey(privateKey); // without prefix "\x19Ethereum Signed Message:\n32"
-
-    const signature = await signingKey.signDigest(typedDataHash);
-
-    const __list = await marketContract.listNFT(nftContract.address, 3, ethwei.parseEther('1'));
-    console.log('listed, price: ', await marketContract.getListPrice(nftContract.address, 3));
-    const _updatelist = await marketContract.updatePrice(nftContract.address, 3, ethwei.parseEther('10'))
-    console.log('updated, price:', await marketContract.getListPrice(nftContract.address, 3));
-    const _buy_ = await marketContract.connect(randomGuy).buyNFT(nftContract.address, 3, {value: ethwei.parseEther('100')});
-    console.log('bought, owner of #3:', await nftContract.ownerOf(3));
+    let sig = ethers.utils.splitSignature(
+        await signer._signTypedData(
+            {
+            name,
+            version,
+            chainId,
+            verifyingContract: token
+            },
+            {
+            Permit: [
+                {
+                name: "owner",
+                type: "address",
+                },
+                {
+                name: "spender",
+                type: "address",
+                },
+                {
+                name: "value",
+                type: "uint256",
+                },
+                {
+                name: "nonce",
+                type: "uint256",
+                },
+                {
+                name: "deadline",
+                type: "uint256",
+                },
+            ],
+            },
+            {
+            owner: signer.address,
+            spender,
+            value,
+            nonce,
+            deadline,
+            }
+        )
+    )
+    console.log(sig);
 }
 
 const runMain = async () => {
