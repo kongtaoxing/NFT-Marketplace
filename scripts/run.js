@@ -1,7 +1,9 @@
 const { hexConcat } = require("ethers/lib/utils");
 
 const main = async () => {
-    const [guy, randomGuy, attacker] = await hre.ethers.getSigners();
+    const [guy, randomGuy] = await hre.ethers.getSigners();
+    console.log('Guy\'s address:', guy.address);
+
     const ethwei = hre.ethers.utils;
 
     const nftContractFactory = await hre.ethers.getContractFactory("testNFT");
@@ -9,6 +11,7 @@ const main = async () => {
 
     const marketContractFactory = await hre.ethers.getContractFactory("NFTMarket");
     const marketContract = await marketContractFactory.deploy();
+    console.log("Contract deployed to:", marketContract.address);
 
     const mintNFT = await nftContract.mint();
     await mintNFT.wait();
@@ -49,22 +52,25 @@ const main = async () => {
 
     const __mintNFT = await nftContract.mint();
     await __mintNFT.wait();
+    console.log('owner of #3:', await nftContract.ownerOf(3));
 
     const __list = await marketContract.listNFT(nftContract.address, 3, ethwei.parseEther('1'));
-    console.log('listed, price: ', await marketContract.getListPrice(nftContract.address, 3));
+    console.log('3 listed, price: ', await marketContract.getListPrice(nftContract.address, 3));
     const _updatelist = await marketContract.updatePrice(nftContract.address, 3, ethwei.parseEther('10'))
-    console.log('updated, price:', await marketContract.getListPrice(nftContract.address, 3));
+    console.log('3 updated, price:', await marketContract.getListPrice(nftContract.address, 3));
     const _buy_ = await marketContract.connect(randomGuy).buyNFT(nftContract.address, 3, {value: ethwei.parseEther('100')});
     console.log('bought, owner of #3:', await nftContract.ownerOf(3));
 
     const _mintNFT__ = await nftContract.mint();
     await _mintNFT__.wait();
+    console.log('Guy\'s address:', guy.address);
 
     const chainId = await guy.getChainId(); // 1337
+    // console.log('test chainId:', chainId);
     const nonce = 0;
+    const name = "SignToList";
     const version = "1";
-    const token = nftContract.address;
-    const owner = guy.address;
+    const token = marketContract.address;
     const tokenId = 4;
     const _tokenPrice = 100;
     const deadline = 100;
@@ -72,6 +78,7 @@ const main = async () => {
     let sig = ethers.utils.splitSignature(
         await guy._signTypedData(
             {
+                name,
                 version,
                 chainId,
                 verifyingContract: token
@@ -83,19 +90,15 @@ const main = async () => {
                     type: "address",
                 },
                 {
-                    name: "owner",
-                    type: "address",
-                },
-                {
                     name: "_tokenId",
                     type: "uint256",
                 },
                 {
-                    name: "nonce",
+                    name: "_price",
                     type: "uint256",
                 },
                 {
-                    name: "_price",
+                    name: "nonce",
                     type: "uint256",
                 },
                 {
@@ -106,16 +109,15 @@ const main = async () => {
             },
             {
                 _NFTContract: nftContract.address,
-                owner: owner,
                 _tokenId: tokenId,
-                nonce,
+                nonce: nonce,
                 _price: _tokenPrice,
-                deadline,
+                deadline: deadline,
             }
         )
     )
     console.log(sig.v, sig.r, sig.s);
-    const _buyWithSig = await marketContract.buyNFTwithSig(nftContract.address, 4, sig.v, sig.r, sig.s);
+    const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
     await _buyWithSig.wait();
 }
 

@@ -20,6 +20,12 @@ interface NFTContract {
 contract NFTMarket {
 
     address owner;
+    string version = "1";
+    string name = "SignToList";
+    bytes32 public DOMAIN_SEPARATOR;
+    bytes32 public constant LIST_TYPEHASH = keccak256(
+        "ListNFT(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 nonce, uint256 deadline)"
+        );
 
     error notApproved();
     error notOwner();
@@ -35,13 +41,11 @@ contract NFTMarket {
         uint256 _price;
         address _owner;
     }
-
-    // --- EIP712 niceties ---
-    bytes32 public DOMAIN_SEPARATOR;
     
     mapping(address => mapping(uint256 => bool)) _listStatus;
     mapping(address => mapping(uint256 => uint256)) _listedPrice;
     mapping(address => mapping(uint256 => address)) _isOwner;
+    mapping(address => uint) public nonces;// 记录合约中每个地址使用链下签名消息交易的数量，用来防止重放攻击。
 
     //Add events
     event ListNFT(address indexed NFTContract, uint256 indexed tokenId, uint256 indexed price);
@@ -54,13 +58,18 @@ contract NFTMarket {
     constructor() {
         console.log("NFTMarket deployed");
         owner = msg.sender;
-        // DOMAIN_SEPARATOR = keccak256(abi.encode(
-        //     keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-        //     keccak256(bytes(name)),
-        //     keccak256(bytes(version)),
-        //     chainId_,
-        //     address(this)
-        // ));
+        uint chainId;
+        assembly {    //buildin assembly to get chainID
+            chainId := chainid()
+        }
+        DOMAIN_SEPARATOR = keccak256(abi.encode(
+            keccak256("EIP712Domain(string name, string version, uint256 chainId, address verifyingContract)"),
+            keccak256(bytes(name)),
+            keccak256(bytes(version)),
+            chainId,
+            address(this)
+        ));
+        // console.log("constr chainId:", chainId);  //1337
     }
 
     function listNFT(address _NFTContract, uint256 _tokenId, uint256 _price) public {
@@ -75,6 +84,33 @@ contract NFTMarket {
         _listedPrice[_NFTContract][_tokenId] = _price;
         _listStatus[_NFTContract][_tokenId] = true;
         _isOwner[_NFTContract][_tokenId] = msg.sender;
+
+        //emit event
+        emit ListNFT(_NFTContract, _tokenId, _price);
+    }
+
+    function listNFTwithSig(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public payable {
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[owner]++, deadline))
+                // 每调用一次`permit`，相应地址的 nonce 就会加 1，
+                // 这样再使用原来的签名消息就无法再通过验证了（重建的签名消息不正确了），用于防止重放攻击。
+            )
+        );
+        address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
+        console.log('Signer\'s address: ',ownerOfNFT);
+        if(!NFTContract(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
+            revert notApproved();
+        }
+        if(NFTContract(_NFTContract).ownerOf(_tokenId) != ownerOfNFT) {
+            revert notOwner();
+        }
+        if (_price <= 0) revert mustBiggerThanZero();
+        _listedPrice[_NFTContract][_tokenId] = _price;
+        _listStatus[_NFTContract][_tokenId] = true;
+        _isOwner[_NFTContract][_tokenId] = ownerOfNFT;
 
         //emit event
         emit ListNFT(_NFTContract, _tokenId, _price);
@@ -140,7 +176,7 @@ contract NFTMarket {
     }
 
     function buyNFTwithSig(address _NFTContract, uint256 _tokenId, uint8 v, bytes32 r, bytes32 s) public payable {
-
+        //listNFTwithSig(_NFTContract, _tokenId, _price, deadline, v, r, s);
     }
 
     function getNFTsDetail(address _NFTContract, uint256 _amounts) public view returns (NFTDetail[] memory) {
