@@ -1,5 +1,4 @@
-const { hexConcat } = require("ethers/lib/utils");
-import { verifyTypedData } from 'ethers/lib/utils'
+const { verifyTypedData } = require('ethers/lib/utils');
 
 const main = async () => {
     const [guy, randomGuy] = await hre.ethers.getSigners();
@@ -75,28 +74,19 @@ const main = async () => {
         chainId: chainId,
         verifyingContract: marketContract.address
     };
-    const type = {
+    const types = {
+        // EIP712Domain: [
+        //     {name: 'name', type: 'string'},
+        //     {name: 'version', type: 'string'},
+        //     {name: 'chainId', type: 'uint256'},
+        //     {name: 'verifyingContract', type: 'address'},
+        // ],
         ListNFT: [
-            {
-                name: "_NFTContract",
-                type: "address",
-            },
-            {
-                name: "_tokenId",
-                type: "uint256",
-            },
-            {
-                name: "_price",
-                type: "uint256",
-            },
-            {
-                name: "nonce",
-                type: "uint256",
-            },
-            {
-                name: "deadline",
-                type: "uint256",
-            },
+            {name: "_NFTContract", type: "address"},
+            {name: "_tokenId", type: "uint256"},
+            {name: "_price", type: "uint256" },
+            {name: "nonce", type: "uint256" },
+            {name: "deadline", type: "uint256"},
         ],
     };
     const data = {
@@ -107,16 +97,14 @@ const main = async () => {
         deadline: 100,
     };
 
-    let sig = ethers.utils.splitSignature(await guy._signTypedData(domain, type, data))
+    const sig = ethers.utils.splitSignature(await guy._signTypedData(domain, types, data))
     console.log(sig.v, sig.r, sig.s);
 
     const verifySig = (sig, data, address) => {
-        return verifyTypedData(
-            domain, type, data, sig,
-        ).toLowerCase() === address.toLowerCase()
+        return verifyTypedData(domain, types, data, sig,)
     }
 
-    console.log(verifySig);
+    console.log('signer add in js file:', verifySig());
     const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
     await _buyWithSig.wait();
 }
