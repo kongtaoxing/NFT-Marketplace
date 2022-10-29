@@ -100,11 +100,9 @@ const main = async () => {
     const sig = ethers.utils.splitSignature(await guy._signTypedData(domain, types, data))
     console.log(sig.v, sig.r, sig.s);
 
-    const verifySig = (sig, data, address) => {
-        return verifyTypedData(domain, types, data, sig,)
-    }
+    const recoveredAddress = ethers.utils.verifyTypedData(domain, types, data, sig);
 
-    console.log('signer add in js file:', verifySig());
+    console.log('signer add in js file:', recoveredAddress);
     const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
     await _buyWithSig.wait();
 }
