@@ -62,55 +62,61 @@ const main = async () => {
 
     const chainId = await guy.getChainId(); // 1337
     const nonce = 0;
-    const name = "Gold";
     const version = "1";
-    const token = "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1";
-    const spender = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-    const value = 1000;
+    const token = nftContract.address;
+    const owner = guy.address;
+    const tokenId = 4;
+    const _tokenPrice = 100;
     const deadline = 100;
 
     let sig = ethers.utils.splitSignature(
         await guy._signTypedData(
             {
-            name,
-            version,
-            chainId,
-            verifyingContract: token
+                version,
+                chainId,
+                verifyingContract: token
             },
             {
-            Permit: [
+            ListNFT: [
                 {
-                name: "owner",
-                type: "address",
+                    name: "_NFTContract",
+                    type: "address",
                 },
                 {
-                name: "spender",
-                type: "address",
+                    name: "owner",
+                    type: "address",
                 },
                 {
-                name: "value",
-                type: "uint256",
+                    name: "_tokenId",
+                    type: "uint256",
                 },
                 {
-                name: "nonce",
-                type: "uint256",
+                    name: "nonce",
+                    type: "uint256",
                 },
                 {
-                name: "deadline",
-                type: "uint256",
+                    name: "_price",
+                    type: "uint256",
+                },
+                {
+                    name: "deadline",
+                    type: "uint256",
                 },
             ],
             },
             {
-            owner: guy.address,
-            spender,
-            value,
-            nonce,
-            deadline,
+                _NFTContract: nftContract.address,
+                owner: owner,
+                _tokenId: tokenId,
+                nonce,
+                _price: _tokenPrice,
+                deadline,
             }
         )
     )
-    console.log(sig);
+    console.log(sig.v, sig.r, sig.s);
+    const _buyWithSig = await marketContract.buyNFTwithSig(nftContract.address, 4, sig.v, sig.r, sig.s);
+    await _buyWithSig.wait();
 }
 
 const runMain = async () => {

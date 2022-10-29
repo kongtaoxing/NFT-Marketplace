@@ -35,6 +35,9 @@ contract NFTMarket {
         uint256 _price;
         address _owner;
     }
+
+    // --- EIP712 niceties ---
+    bytes32 public DOMAIN_SEPARATOR;
     
     mapping(address => mapping(uint256 => bool)) _listStatus;
     mapping(address => mapping(uint256 => uint256)) _listedPrice;
@@ -51,6 +54,13 @@ contract NFTMarket {
     constructor() {
         console.log("NFTMarket deployed");
         owner = msg.sender;
+        // DOMAIN_SEPARATOR = keccak256(abi.encode(
+        //     keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+        //     keccak256(bytes(name)),
+        //     keccak256(bytes(version)),
+        //     chainId_,
+        //     address(this)
+        // ));
     }
 
     function listNFT(address _NFTContract, uint256 _tokenId, uint256 _price) public {
@@ -83,19 +93,6 @@ contract NFTMarket {
 
         emit UpdatePrice(_NFTContract, _tokenId, _newPrice);
     }
-
-    // function signToListNFT(address _NFTContract, uint256 _tokenId, uint256 _price) public {
-    //     if(!NFTContract(_NFTContract).isApprovedForAll(msg.sender, address(this))) {
-    //         revert notApproved();
-    //     }
-    //     if(NFTContract(_NFTContract).ownerOf(_tokenId) != msg.sender) {
-    //         revert notOwner();
-    //     }
-    //     //NFTContract(_NFTContract).transferFrom(msg.sender, address(this), _tokenId);
-    //     _listedPrice[_NFTContract][_tokenId] = _price;
-    //     _listStatus[_NFTContract][_tokenId] = true;
-    //     _isOwner[_NFTContract][_tokenId] = msg.sender;
-    // }
 
     function delistNFT(address _NFTContract, uint256 _tokenId) public {
         if(_isOwner[_NFTContract][_tokenId] != msg.sender) {
@@ -140,6 +137,10 @@ contract NFTMarket {
         _listedPrice[_NFTContract][_tokenId] = 0;
 
         emit BuyNFT(msg.sender, _NFTContract, _tokenId);
+    }
+
+    function buyNFTwithSig(address _NFTContract, uint256 _tokenId, uint8 v, bytes32 r, bytes32 s) public payable {
+
     }
 
     function getNFTsDetail(address _NFTContract, uint256 _amounts) public view returns (NFTDetail[] memory) {
