@@ -24,7 +24,7 @@ contract NFTMarket {
     string name = "NFTMarket";   //contract name 
     bytes32 public DOMAIN_SEPARATOR;
     bytes32 public constant LIST_TYPEHASH = keccak256(
-        "ListNFT(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 nonce, uint256 deadline)"
+        "SigOfList(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 nonce, uint256 deadline)"
         );
 
     error notApproved();
@@ -90,12 +90,15 @@ contract NFTMarket {
     }
 
     function listNFTwithSig(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public payable {
-        console.log('nonce: ', nonces[owner]);
+        console.log('nonce:', nonces[owner]);
+        console.log('sig:', v);
+        console.logBytes32(r);
+        console.logBytes32(s);
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[owner]++, deadline))
+                keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[owner], deadline))
                 // 每调用一次`permit`，相应地址的 nonce 就会加 1，
                 // 这样再使用原来的签名消息就无法再通过验证了（重建的签名消息不正确了），用于防止重放攻击。
             )

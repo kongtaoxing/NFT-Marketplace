@@ -68,33 +68,47 @@ const main = async () => {
     const chainId = await guy.getChainId(); // 1337
     // console.log('test chainId:', chainId);
 
-    const domain = {
-        name: "NFTMarket",
-        version: "1",
-        chainId: chainId,
-        verifyingContract: marketContract.address
-    };
-    const types = {
-        ListNFT: [
-            {name: "_NFTContract", type: "address"},
-            {name: "_tokenId", type: "uint256"},
-            {name: "_price", type: "uint256" },
-            {name: "nonce", type: "uint256" },
-            {name: "deadline", type: "uint256"},
-        ],
-    };
-    const data = {
-        _NFTContract: nftContract.address,
-        _tokenId: 4,
-        nonce: 0,
-        _price: 100,
-        deadline: 100,
+    const message = {
+        domain: {
+            name: "NFTMarket",
+            version: "1",
+            chainId: chainId,
+            verifyingContract: marketContract.address
+        },
+        types: {
+            // EIP712Domain: [
+            //     { name: 'name', type: 'string' },
+            //     { name: 'version', type: 'string' },
+            //     { name: 'chainId', type: 'uint256' },
+            //     { name: 'verifyingContract', type: 'address' },
+            // ],
+            SigOfList: [
+                {name: "_NFTContract", type: "address"},
+                {name: "_tokenId", type: "uint256"},
+                {name: "_price", type: "uint256" },
+                {name: "nonce", type: "uint256" },
+                {name: "deadline", type: "uint256"},
+            ],
+        },
+        primaryType: "SigOfList",
+        data: {
+            _NFTContract: nftContract.address,
+            _tokenId: 4,
+            nonce: 0,
+            _price: 100,
+            deadline: 100,
+        }
     };
 
-    const sig = ethers.utils.splitSignature(await guy._signTypedData(domain, types, data))
+    // only get the hash
+    // const sign = await guy._signTypedData(message.domain, message.types, message.data);
+    // console.log(sign);
+
+    //get v, r, s
+    const sig = ethers.utils.splitSignature(await guy._signTypedData(message.domain, message.types, message.data))
     console.log(sig.v, sig.r, sig.s);
 
-    const recoveredAddress = ethers.utils.verifyTypedData(domain, types, data, sig);
+    const recoveredAddress = ethers.utils.verifyTypedData(message.domain, message.types, message.data, sig);
 
     console.log('signer add in js file:', recoveredAddress);
     const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
