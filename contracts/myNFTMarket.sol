@@ -21,7 +21,7 @@ contract NFTMarket {
 
     address owner;
     string version = "1";
-    string name = "SignToList";
+    string name = "NFTMarket";   //contract name 
     bytes32 public DOMAIN_SEPARATOR;
     bytes32 public constant LIST_TYPEHASH = keccak256(
         "ListNFT(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 nonce, uint256 deadline)"

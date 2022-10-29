@@ -68,7 +68,7 @@ const main = async () => {
     const chainId = await guy.getChainId(); // 1337
     // console.log('test chainId:', chainId);
     const nonce = 0;
-    const name = "SignToList";
+    const name = "NFTMarket";
     const version = "1";
     const token = marketContract.address;
     const tokenId = 4;
