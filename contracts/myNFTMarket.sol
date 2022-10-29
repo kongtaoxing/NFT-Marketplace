@@ -100,7 +100,7 @@ contract NFTMarket {
             )
         );
         address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
-        console.log('Signer\'s address: ',ownerOfNFT);
+        console.log("Signer's address: ",ownerOfNFT);
         if(!NFTContract(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
             revert notApproved();
         }

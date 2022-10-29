@@ -75,46 +75,45 @@ const main = async () => {
     const _tokenPrice = 100;
     const deadline = 100;
 
-    let sig = ethers.utils.splitSignature(
-        await guy._signTypedData(
+    const domain = {
+        name: name,
+        version: version,
+        chainId: chainId,
+        verifyingContract: token
+    };
+    const type = {
+        ListNFT: [
             {
-                name,
-                version,
-                chainId,
-                verifyingContract: token
+                name: "_NFTContract",
+                type: "address",
             },
             {
-            ListNFT: [
-                {
-                    name: "_NFTContract",
-                    type: "address",
-                },
-                {
-                    name: "_tokenId",
-                    type: "uint256",
-                },
-                {
-                    name: "_price",
-                    type: "uint256",
-                },
-                {
-                    name: "nonce",
-                    type: "uint256",
-                },
-                {
-                    name: "deadline",
-                    type: "uint256",
-                },
-            ],
+                name: "_tokenId",
+                type: "uint256",
             },
             {
-                _NFTContract: nftContract.address,
-                _tokenId: tokenId,
-                nonce: nonce,
-                _price: _tokenPrice,
-                deadline: deadline,
-            }
-        )
+                name: "_price",
+                type: "uint256",
+            },
+            {
+                name: "nonce",
+                type: "uint256",
+            },
+            {
+                name: "deadline",
+                type: "uint256",
+            },
+        ],
+    };
+    const data = {
+        _NFTContract: nftContract.address,
+        _tokenId: tokenId,
+        nonce: nonce,
+        _price: _tokenPrice,
+        deadline: deadline,
+    };
+
+    let sig = ethers.utils.splitSignature(await guy._signTypedData(domain, type, data)
     )
     console.log(sig.v, sig.r, sig.s);
     const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
