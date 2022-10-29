@@ -90,6 +90,7 @@ contract NFTMarket {
     }
 
     function listNFTwithSig(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public payable {
+        console.log('nonce: ', nonces[owner]);
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
