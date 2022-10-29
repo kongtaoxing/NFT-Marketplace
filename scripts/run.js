@@ -1,4 +1,5 @@
 const { hexConcat } = require("ethers/lib/utils");
+import { verifyTypedData } from 'ethers/lib/utils'
 
 const main = async () => {
     const [guy, randomGuy] = await hre.ethers.getSigners();
@@ -67,19 +68,12 @@ const main = async () => {
 
     const chainId = await guy.getChainId(); // 1337
     // console.log('test chainId:', chainId);
-    const nonce = 0;
-    const name = "NFTMarket";
-    const version = "1";
-    const token = marketContract.address;
-    const tokenId = 4;
-    const _tokenPrice = 100;
-    const deadline = 100;
 
     const domain = {
-        name: name,
-        version: version,
+        name: "NFTMarket",
+        version: "1",
         chainId: chainId,
-        verifyingContract: token
+        verifyingContract: marketContract.address
     };
     const type = {
         ListNFT: [
@@ -107,15 +101,22 @@ const main = async () => {
     };
     const data = {
         _NFTContract: nftContract.address,
-        _tokenId: tokenId,
-        nonce: nonce,
-        _price: _tokenPrice,
-        deadline: deadline,
+        _tokenId: 4,
+        nonce: 0,
+        _price: 100,
+        deadline: 100,
     };
 
-    let sig = ethers.utils.splitSignature(await guy._signTypedData(domain, type, data)
-    )
+    let sig = ethers.utils.splitSignature(await guy._signTypedData(domain, type, data))
     console.log(sig.v, sig.r, sig.s);
+
+    const verifySig = (sig, data, address) => {
+        return verifyTypedData(
+            domain, type, data, sig,
+        ).toLowerCase() === address.toLowerCase()
+    }
+
+    console.log(verifySig);
     const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
     await _buyWithSig.wait();
 }
