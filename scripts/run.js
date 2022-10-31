@@ -68,7 +68,7 @@ const main = async () => {
     const chainId = await guy.getChainId(); // 1337
     // console.log('test chainId:', chainId);
 
-    const message = JSON.stringify({
+    const message = {
         domain: {
             name: "NFTMarket",
             version: "1",
@@ -98,7 +98,7 @@ const main = async () => {
             _price: 100,
             deadline: 100,
         }
-    });
+    };
 
     // only get the hash
     const sign = await guy._signTypedData(message.domain, message.types, message.data);
