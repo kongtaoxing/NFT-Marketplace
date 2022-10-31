@@ -68,7 +68,7 @@ const main = async () => {
     const chainId = await guy.getChainId(); // 1337
     // console.log('test chainId:', chainId);
 
-    const message = {
+    const message = JSON.stringify({
         domain: {
             name: "NFTMarket",
             version: "1",
@@ -76,12 +76,12 @@ const main = async () => {
             verifyingContract: marketContract.address
         },
         types: {
-            // EIP712Domain: [
-            //     { name: 'name', type: 'string' },
-            //     { name: 'version', type: 'string' },
-            //     { name: 'chainId', type: 'uint256' },
-            //     { name: 'verifyingContract', type: 'address' },
-            // ],
+            EIP712Domain: [
+                { name: 'name', type: 'string' },
+                { name: 'version', type: 'string' },
+                { name: 'chainId', type: 'uint256' },
+                { name: 'verifyingContract', type: 'address' },
+            ],
             SigOfList: [
                 {name: "_NFTContract", type: "address"},
                 {name: "_tokenId", type: "uint256"},
@@ -98,11 +98,11 @@ const main = async () => {
             _price: 100,
             deadline: 100,
         }
-    };
+    });
 
     // only get the hash
-    // const sign = await guy._signTypedData(message.domain, message.types, message.data);
-    // console.log(sign);
+    const sign = await guy._signTypedData(message.domain, message.types, message.data);
+    console.log(sign);
 
     //get v, r, s
     const sig = ethers.utils.splitSignature(await guy._signTypedData(message.domain, message.types, message.data))
@@ -113,6 +113,7 @@ const main = async () => {
     console.log('signer add in js file:', recoveredAddress);
     const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
     await _buyWithSig.wait();
+    await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
 }
 
 const runMain = async () => {
