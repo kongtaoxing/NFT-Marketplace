@@ -107,9 +107,44 @@ const main = async () => {
     const recoveredAddress = ethers.utils.verifyTypedData(message.domain, message.types, message.data, sig);
 
     console.log('signer add in js file:', recoveredAddress);
-    const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
-    await _buyWithSig.wait();
-    // await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
+    // const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
+    // await _buyWithSig.wait();
+    await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
+
+    // to sign this through metamask 
+//     let message = {
+//         domain: {
+//             name: "NFTMarket",
+//             version: "1.0",
+//             chainId: ethereum.chainId,
+//             verifyingContract: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'
+//         },
+//         types: {
+//             EIP712Domain: [
+//                 {name: "name", type: "string" },
+//                 {name: "version", type: "string"},
+//                 {name: "chainId", type: "uint256"},
+//                 {name: "verifyingContract", type: "address"}
+//             ],
+//             ListNFTwithSig: [
+//                 {name: "_NFTContract", type: "address"},
+//                 {name: "_tokenId", type: "uint256"},
+//                 {name: "_price", type: "uint256" },
+//                 {name: "nonce", type: "uint256" },
+//                 {name: "deadline", type: "uint256"}
+//             ],
+//         },
+//         primaryType: "ListNFTwithSig",
+//         message: {
+//             _NFTContract: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
+//             _tokenId: 4,
+//             _price: 100,
+//             nonce: 0,
+//             deadline: 100,
+//         }
+//     };
+// let data = JSON.stringify(message)
+// ethereum.request({method:"eth_signTypedData_v4", params: [ethereum.selectedAddress, data]}).then(console.log)
 }
 
 const runMain = async () => {

@@ -32,6 +32,7 @@ contract NFTMarket {
     error notListed();
     error mustBiggerThanZero();
     error invalidSigLen();
+    error sigAlreadyUsed();
 
     struct NFTDetail {
         string _name;
@@ -45,8 +46,8 @@ contract NFTMarket {
     mapping(address => mapping(uint256 => bool)) _listStatus;
     mapping(address => mapping(uint256 => uint256)) _listedPrice;
     mapping(address => mapping(uint256 => address)) _isOwner;
-    mapping(address => uint) public nonces;// 记录合约中每个地址使用链下签名消息交易的数量，用来防止重放攻击。
-
+    mapping(bytes => uint) public nonces;// 记录每个签名使用的次数，避免重放攻击
+ 
     //Add events
     event ListNFT(address indexed NFTContract, uint256 indexed tokenId, uint256 indexed price);
     event UpdatePrice(address indexed NFTContract, uint256 indexed tokenId, uint256 indexed newPrice);
@@ -92,18 +93,18 @@ contract NFTMarket {
     }
 
     function listNFTwithSig(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
-        console.log('nonce:', nonces[owner]);
-        console.log('_NFTContract:', _NFTContract);
-        console.log('id:', _tokenId, 'price:', _price);
-        console.log('deadline:', deadline);
-        console.log('sig:', v);
-        console.logBytes32(r);
-        console.logBytes32(s);
+        bytes memory sig = new bytes(65);
+        assembly {
+            mstore(add(sig, 0x20), r)
+            mstore(add(sig, 0x40), s)
+            mstore(add(sig, 0x60), byte(0, v))
+            mstore(0, 0)
+        }
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[owner]++, deadline))
+                keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[sig]++, deadline))
                 // 每调用一次`permit`，相应地址的 nonce 就会加 1，
                 // 这样再使用原来的签名消息就无法再通过验证了（重建的签名消息不正确了），用于防止重放攻击。
             )
@@ -125,49 +126,54 @@ contract NFTMarket {
         emit ListNFT(_NFTContract, _tokenId, _price);
     }
 
-    // function listNFTwithSig(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 deadline, bytes memory _signature) public {
-    //     // 检查签名长度，65是标准r,s,v签名的长度
-    //     if(_signature.length != 65) revert invalidSigLen();
-    //     bytes32 r;
-    //     bytes32 s;
-    //     uint8 v;
-    //     // 目前只能用assembly (内联汇编)来从签名中获得r,s,v的值
-    //     assembly {
-    //         // 读取长度数据后的32 bytes
-    //         r := mload(add(_signature, 0x20))
-    //         // 读取之后的32 bytes
-    //         s := mload(add(_signature, 0x40))
-    //         // 读取最后一个byte
-    //         v := byte(0, mload(add(_signature, 0x60)))
-    //     }
-    //     console.log('sig:', v);
-    //     console.logBytes32(r);
-    //     console.logBytes32(s);
-    //     bytes32 digest = keccak256(
-    //         abi.encodePacked(
-    //             '\x19\x01',
-    //             DOMAIN_SEPARATOR,
-    //             keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[owner], deadline))
-    //             // 每调用一次`permit`，相应地址的 nonce 就会加 1，
-    //             // 这样再使用原来的签名消息就无法再通过验证了（重建的签名消息不正确了），用于防止重放攻击。
-    //         )
-    //     );
-    //     address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
-    //     console.log("Signer's address: ",ownerOfNFT);
-    //     if(!NFTContract(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
-    //         revert notApproved();
-    //     }
-    //     if(NFTContract(_NFTContract).ownerOf(_tokenId) != ownerOfNFT) {
-    //         revert notOwner();
-    //     }
-    //     if (_price <= 0) revert mustBiggerThanZero();
-    //     _listedPrice[_NFTContract][_tokenId] = _price;
-    //     _listStatus[_NFTContract][_tokenId] = true;
-    //     _isOwner[_NFTContract][_tokenId] = ownerOfNFT;
+    function listNFTwithSig(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 deadline, bytes memory _signature) public {
+        // 检查签名长度，65是标准r,s,v签名的长度
+        if(_signature.length != 65) revert invalidSigLen();
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        // 目前只能用assembly (内联汇编)来从签名中获得r,s,v的值
+        assembly {
+            // 读取长度数据后的32 bytes
+            r := mload(add(_signature, 0x20))
+            // 读取之后的32 bytes
+            s := mload(add(_signature, 0x40))
+            // 读取最后一个byte
+            v := byte(0, mload(add(_signature, 0x60)))
+        }
+        console.log('sig:', v);
+        console.logBytes32(r);
+        console.logBytes32(s);
+        console.log('signature:');
+        console.logBytes(_signature);
+        // console.log('sig:');
+        // console.logBytes(sig);
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[_signature]++, deadline))
+                // 每调用一次`permit`，相应signature的 nonce 就会加 1，
+                // 这样再使用原来的签名消息就无法再通过验证了（重建的签名消息不正确了），用于防止重放攻击。
+            )
+        );
+        if (nonces[_signature] > 1) revert sigAlreadyUsed();
+        address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
+        console.log("Signer's address: ",ownerOfNFT);
+        if(!NFTContract(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
+            revert notApproved();
+        }
+        if(NFTContract(_NFTContract).ownerOf(_tokenId) != ownerOfNFT) {
+            revert notOwner();
+        }
+        if (_price <= 0) revert mustBiggerThanZero();
+        _listedPrice[_NFTContract][_tokenId] = _price;
+        _listStatus[_NFTContract][_tokenId] = true;
+        _isOwner[_NFTContract][_tokenId] = ownerOfNFT;
 
-    //     //emit event
-    //     emit ListNFT(_NFTContract, _tokenId, _price);
-    // }
+        //emit event
+        emit ListNFT(_NFTContract, _tokenId, _price);
+    }
 
     function updatePrice(address _NFTContract, uint256 _tokenId, uint256 _newPrice) public {
         if(!NFTContract(_NFTContract).isApprovedForAll(msg.sender, address(this))) {
