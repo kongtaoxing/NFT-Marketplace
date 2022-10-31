@@ -66,7 +66,7 @@ const main = async () => {
     console.log('Guy\'s address:', guy.address);
 
     const chainId = await guy.getChainId(); // 1337
-    // console.log('test chainId:', chainId);
+    // console.log('js chainId:', chainId);
 
     const message = {
         domain: {
@@ -76,12 +76,6 @@ const main = async () => {
             verifyingContract: marketContract.address
         },
         types: {
-            // EIP712Domain: [
-            //     { name: 'name', type: 'string' },
-            //     { name: 'version', type: 'string' },
-            //     { name: 'chainId', type: 'uint256' },
-            //     { name: 'verifyingContract', type: 'address' },
-            // ],
             ListNFTwithSig: [
                 {name: "_NFTContract", type: "address"},
                 {name: "_tokenId", type: "uint256"},
@@ -94,11 +88,13 @@ const main = async () => {
         data: {
             _NFTContract: nftContract.address,
             _tokenId: 4,
-            nonce: 0,
             _price: 100,
+            nonce: 0,
             deadline: 100,
         }
     };
+
+    console.log(message.domain, message.data);
 
     // only get the hash
     const sign = await guy._signTypedData(message.domain, message.types, message.data);

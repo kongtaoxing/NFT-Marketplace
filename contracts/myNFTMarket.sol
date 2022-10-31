@@ -23,9 +23,8 @@ contract NFTMarket {
     string version = "1.0";
     string name = "NFTMarket";   //contract name 
     bytes32 public DOMAIN_SEPARATOR;
-    bytes32 public constant LIST_TYPEHASH = keccak256(
-        "ListNFTwithSig(address NFTContract, uint256 tokenId, uint256 price, uint256 nonce, uint256 deadline)"
-        );
+    // keccak256("ListNFTwithSig(address _NFTContract,uint256 _tokenId,uint256 _price,uint256 nonce,uint256 deadline)")
+    bytes32 public constant LIST_TYPEHASH = 0x6f8a295cea3edab22428a30506be6fb57d93dd2ba58973d57bb71c48af8fbc7e;
 
     error notApproved();
     error notOwner();
@@ -59,18 +58,20 @@ contract NFTMarket {
     constructor() {
         console.log("NFTMarket deployed");
         owner = msg.sender;
-        uint chainId;
+        uint256 chainId;
         assembly {    //buildin assembly to get chainID
             chainId := chainid()
         }
-        DOMAIN_SEPARATOR = keccak256(abi.encode(
-            keccak256("EIP712Domain(string name, string version, uint256 chainId, address verifyingContract)"),
-            keccak256(bytes(name)),
-            keccak256(bytes(version)),
-            chainId,
-            address(this)
-        ));
-        // console.log("constr chainId:", chainId);  //1337
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name, string version, uint256 chainId, address verifyingContract)"),
+                keccak256(bytes(name)),
+                keccak256(bytes(version)),
+                chainId,
+                address(this)
+            )
+        );
+        // console.log("constructor chainId:", chainId);  //1337
     }
 
     function listNFT(address _NFTContract, uint256 _tokenId, uint256 _price) public {
@@ -92,6 +93,9 @@ contract NFTMarket {
 
     function listNFTwithSig(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
         console.log('nonce:', nonces[owner]);
+        console.log('_NFTContract:', _NFTContract);
+        console.log('id:', _tokenId, 'price:', _price);
+        console.log('deadline:', deadline);
         console.log('sig:', v);
         console.logBytes32(r);
         console.logBytes32(s);
@@ -99,7 +103,7 @@ contract NFTMarket {
             abi.encodePacked(
                 '\x19\x01',
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[owner], deadline))
+                keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[owner]++, deadline))
                 // 每调用一次`permit`，相应地址的 nonce 就会加 1，
                 // 这样再使用原来的签名消息就无法再通过验证了（重建的签名消息不正确了），用于防止重放攻击。
             )
