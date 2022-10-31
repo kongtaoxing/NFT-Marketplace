@@ -109,7 +109,7 @@ const main = async () => {
     console.log('signer add in js file:', recoveredAddress);
     const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
     await _buyWithSig.wait();
-    await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
+    await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address.toLowerCase(), 4, 100, 100, sign);
 }
 
 const runMain = async () => {
