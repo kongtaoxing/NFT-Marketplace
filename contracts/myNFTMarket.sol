@@ -20,11 +20,11 @@ interface NFTContract {
 contract NFTMarket {
 
     address owner;
-    string version = "1";
+    string version = "1.0";
     string name = "NFTMarket";   //contract name 
     bytes32 public DOMAIN_SEPARATOR;
     bytes32 public constant LIST_TYPEHASH = keccak256(
-        "SigOfList(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 nonce, uint256 deadline)"
+        "SigOfList(address NFTContract, uint256 tokenId, uint256 price, uint256 nonce, uint256 deadline)"
         );
 
     error notApproved();
@@ -32,6 +32,7 @@ contract NFTMarket {
     error insufficientBalance();
     error notListed();
     error mustBiggerThanZero();
+    error invalidSigLen();
 
     struct NFTDetail {
         string _name;
@@ -120,55 +121,49 @@ contract NFTMarket {
         emit ListNFT(_NFTContract, _tokenId, _price);
     }
 
-    function listNFTwithSig(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 deadline, bytes memory _signature) public {
-        // 检查签名长度，65是标准r,s,v签名的长度
-        require(_signature.length == 65, "invalid signature length");
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        // 目前只能用assembly (内联汇编)来从签名中获得r,s,v的值
-        assembly {
-            /*
-            前32 bytes存储签名的长度 (动态数组存储规则)
-            add(sig, 32) = sig的指针 + 32
-            等效为略过signature的前32 bytes
-            mload(p) 载入从内存地址p起始的接下来32 bytes数据
-            */
-            // 读取长度数据后的32 bytes
-            r := mload(add(_signature, 0x20))
-            // 读取之后的32 bytes
-            s := mload(add(_signature, 0x40))
-            // 读取最后一个byte
-            v := byte(0, mload(add(_signature, 0x60)))
-        }
-        console.log('sig:', v);
-        console.logBytes32(r);
-        console.logBytes32(s);
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                '\x19\x01',
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[owner], deadline))
-                // 每调用一次`permit`，相应地址的 nonce 就会加 1，
-                // 这样再使用原来的签名消息就无法再通过验证了（重建的签名消息不正确了），用于防止重放攻击。
-            )
-        );
-        address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
-        console.log("Signer's address: ",ownerOfNFT);
-        if(!NFTContract(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
-            revert notApproved();
-        }
-        if(NFTContract(_NFTContract).ownerOf(_tokenId) != ownerOfNFT) {
-            revert notOwner();
-        }
-        if (_price <= 0) revert mustBiggerThanZero();
-        _listedPrice[_NFTContract][_tokenId] = _price;
-        _listStatus[_NFTContract][_tokenId] = true;
-        _isOwner[_NFTContract][_tokenId] = ownerOfNFT;
+    // function listNFTwithSig(address _NFTContract, uint256 _tokenId, uint256 _price, uint256 deadline, bytes memory _signature) public {
+    //     // 检查签名长度，65是标准r,s,v签名的长度
+    //     if(_signature.length != 65) revert invalidSigLen();
+    //     bytes32 r;
+    //     bytes32 s;
+    //     uint8 v;
+    //     // 目前只能用assembly (内联汇编)来从签名中获得r,s,v的值
+    //     assembly {
+    //         // 读取长度数据后的32 bytes
+    //         r := mload(add(_signature, 0x20))
+    //         // 读取之后的32 bytes
+    //         s := mload(add(_signature, 0x40))
+    //         // 读取最后一个byte
+    //         v := byte(0, mload(add(_signature, 0x60)))
+    //     }
+    //     console.log('sig:', v);
+    //     console.logBytes32(r);
+    //     console.logBytes32(s);
+    //     bytes32 digest = keccak256(
+    //         abi.encodePacked(
+    //             '\x19\x01',
+    //             DOMAIN_SEPARATOR,
+    //             keccak256(abi.encode(LIST_TYPEHASH, _NFTContract, _tokenId, _price, nonces[owner], deadline))
+    //             // 每调用一次`permit`，相应地址的 nonce 就会加 1，
+    //             // 这样再使用原来的签名消息就无法再通过验证了（重建的签名消息不正确了），用于防止重放攻击。
+    //         )
+    //     );
+    //     address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
+    //     console.log("Signer's address: ",ownerOfNFT);
+    //     if(!NFTContract(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
+    //         revert notApproved();
+    //     }
+    //     if(NFTContract(_NFTContract).ownerOf(_tokenId) != ownerOfNFT) {
+    //         revert notOwner();
+    //     }
+    //     if (_price <= 0) revert mustBiggerThanZero();
+    //     _listedPrice[_NFTContract][_tokenId] = _price;
+    //     _listStatus[_NFTContract][_tokenId] = true;
+    //     _isOwner[_NFTContract][_tokenId] = ownerOfNFT;
 
-        //emit event
-        emit ListNFT(_NFTContract, _tokenId, _price);
-    }
+    //     //emit event
+    //     emit ListNFT(_NFTContract, _tokenId, _price);
+    // }
 
     function updatePrice(address _NFTContract, uint256 _tokenId, uint256 _newPrice) public {
         if(!NFTContract(_NFTContract).isApprovedForAll(msg.sender, address(this))) {

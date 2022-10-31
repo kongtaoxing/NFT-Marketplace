@@ -71,31 +71,31 @@ const main = async () => {
     const message = {
         domain: {
             name: "NFTMarket",
-            version: "1",
+            version: "1.0",
             chainId: chainId,
             verifyingContract: marketContract.address
         },
         types: {
-            EIP712Domain: [
-                { name: 'name', type: 'string' },
-                { name: 'version', type: 'string' },
-                { name: 'chainId', type: 'uint256' },
-                { name: 'verifyingContract', type: 'address' },
-            ],
+            // EIP712Domain: [
+            //     { name: 'name', type: 'string' },
+            //     { name: 'version', type: 'string' },
+            //     { name: 'chainId', type: 'uint256' },
+            //     { name: 'verifyingContract', type: 'address' },
+            // ],
             SigOfList: [
-                {name: "_NFTContract", type: "address"},
-                {name: "_tokenId", type: "uint256"},
-                {name: "_price", type: "uint256" },
+                {name: "NFTContract", type: "address"},
+                {name: "tokenId", type: "uint256"},
+                {name: "price", type: "uint256" },
                 {name: "nonce", type: "uint256" },
                 {name: "deadline", type: "uint256"},
             ],
         },
-        primaryType: "SigOfList",
+        // primaryType: "SigOfList",
         data: {
-            _NFTContract: nftContract.address,
-            _tokenId: 4,
+            NFTContract: nftContract.address,
+            tokenId: 4,
             nonce: 0,
-            _price: 100,
+            price: 100,
             deadline: 100,
         }
     };
@@ -105,7 +105,7 @@ const main = async () => {
     console.log(sign);
 
     //get v, r, s
-    const sig = ethers.utils.splitSignature(await guy._signTypedData(message.domain, message.types, message.data))
+    const sig = ethers.utils.splitSignature(sign);
     console.log(sig.v, sig.r, sig.s);
 
     const recoveredAddress = ethers.utils.verifyTypedData(message.domain, message.types, message.data, sig);
