@@ -82,20 +82,20 @@ const main = async () => {
             //     { name: 'chainId', type: 'uint256' },
             //     { name: 'verifyingContract', type: 'address' },
             // ],
-            SigOfList: [
-                {name: "NFTContract", type: "address"},
-                {name: "tokenId", type: "uint256"},
-                {name: "price", type: "uint256" },
+            ListNFTwithSig: [
+                {name: "_NFTContract", type: "address"},
+                {name: "_tokenId", type: "uint256"},
+                {name: "_price", type: "uint256" },
                 {name: "nonce", type: "uint256" },
-                {name: "deadline", type: "uint256"},
+                {name: "deadline", type: "uint256"}
             ],
         },
-        // primaryType: "SigOfList",
+        // primaryType: "ListNFTwithSig",
         data: {
-            NFTContract: nftContract.address,
-            tokenId: 4,
+            _NFTContract: nftContract.address,
+            _tokenId: 4,
             nonce: 0,
-            price: 100,
+            _price: 100,
             deadline: 100,
         }
     };

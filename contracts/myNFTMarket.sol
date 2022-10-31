@@ -24,7 +24,7 @@ contract NFTMarket {
     string name = "NFTMarket";   //contract name 
     bytes32 public DOMAIN_SEPARATOR;
     bytes32 public constant LIST_TYPEHASH = keccak256(
-        "SigOfList(address NFTContract, uint256 tokenId, uint256 price, uint256 nonce, uint256 deadline)"
+        "ListNFTwithSig(address NFTContract, uint256 tokenId, uint256 price, uint256 nonce, uint256 deadline)"
         );
 
     error notApproved();
