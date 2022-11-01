@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
 contract testNFT is ERC721 {
     uint256 _tokenId;
@@ -19,5 +20,11 @@ contract testNFT is ERC721 {
         _safeMint(msg.sender, _tokenId);
         console.log("NFT#", _tokenId, "has been minted");
         _tokenId++;
+    }
+}
+
+contract test1115 is ERC1155 {
+    constructor() ERC1155("test1155") {
+        console.log("1155 deployed");
     }
 }

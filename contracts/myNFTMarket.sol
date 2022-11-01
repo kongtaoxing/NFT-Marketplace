@@ -17,6 +17,17 @@ interface NFTContract {
     function totalSupply() external view returns(uint256);
 }
 
+interface ERC1155NFT {
+    //basic NFT function
+    function balanceOf(address account, uint256 id) external view returns (uint256);
+    function setApprovalForAll(address operator, bool approved) external;
+    function isApprovedForAll(address account, address operator) external view returns (bool);
+    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes memory data) external;
+
+    //get 1155 details
+    function uri(uint256 id) external view returns (string memory);
+}
+
 contract NFTMarket {
 
     address owner;
