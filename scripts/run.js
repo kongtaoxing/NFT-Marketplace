@@ -107,10 +107,10 @@ const main = async () => {
     const recoveredAddress = ethers.utils.verifyTypedData(message.domain, message.types, message.data, sig);
 
     console.log('signer addr in js file:', recoveredAddress);
-    const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
+    const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithRsv(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
     await _buyWithSig.wait();
-    await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
-    // await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
+    await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
+    await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
 
     // to sign this through metamask 
 //     let message = {
