@@ -44,6 +44,7 @@ contract NFTMarket {
     error mustBiggerThanZero();
     error invalidSigLen();
     error sigAlreadyUsed();
+    error invalidAmount();
 
     struct NFTDetail {
         string _name;
@@ -58,6 +59,10 @@ contract NFTMarket {
     mapping(address => mapping(uint256 => uint256)) _listedPrice;
     mapping(address => mapping(uint256 => address)) _isOwner;
     mapping(bytes => uint) public nonces;// 记录每个签名使用的次数，避免重放攻击
+
+    // For ERC1155
+    mapping(address => mapping(uint256 => mapping(address => uint256))) _listAmount;
+    mapping(address => mapping(uint256 => mapping(address => uint256))) _priceForUni;
  
     //Add events
     event ListNFT(address indexed NFTContract, uint256 indexed tokenId, uint256 indexed price);
@@ -65,6 +70,11 @@ contract NFTMarket {
     event DelistNFT(address indexed NFTContract, uint256 indexed tokenId);
     event BuyNFT(address indexed buyer, address indexed NFTContract, uint256 indexed tokenId);
 
+    // events for ERC1155
+    event List1155NFT(address indexed NFTContract, uint256 indexed tokenId, uint256 indexed amount, uint256 price);
+    event Update1155Price(address indexed NFTContract, uint256 indexed tokenId, uint256 amount, uint256 indexed newPrice);
+
+    // events for owner
     event ChangeOwner(address indexed newOwner);
 
     constructor() {
@@ -85,6 +95,12 @@ contract NFTMarket {
         );
         // console.log("constructor chainId:", chainId);  //1337
     }
+
+    /******************************************************************************************************
+    *                                                                                                     *
+    *                                      ERC721 NFT Market                                              *
+    *                                                                                                     *
+    *******************************************************************************************************/
 
     function listNFT(address _NFTContract, uint256 _tokenId, uint256 _price) public {
         if(!NFTContract(_NFTContract).isApprovedForAll(msg.sender, address(this))) {
@@ -340,6 +356,49 @@ contract NFTMarket {
         }
         return _listedTokenId;
     }
+
+    /******************************************************************************************************
+    *                                                                                                     *
+    *                                      ERC1155 NFT Market                                             *
+    *                                                                                                     *
+    *******************************************************************************************************/
+
+    function list1155NFT(address _NFTContract, uint256 _tokenId, uint256 _amount, uint256 _price) public {
+        if(!ERC1155NFT(_NFTContract).isApprovedForAll(msg.sender, address(this))) {
+            revert notApproved();
+        }
+        if(ERC1155NFT(_NFTContract).balanceOf(msg.sender, _tokenId) == 0) {
+            revert notOwner();
+        }
+        if(ERC1155NFT(_NFTContract).balanceOf(msg.sender, _tokenId) < _amount) {
+            revert invalidAmount();
+        }
+        if (_price <= 0) revert mustBiggerThanZero();
+
+        _listAmount[_NFTContract][_tokenId][msg.sender] = _amount;
+        _priceForUni[_NFTContract][_tokenId][msg.sender] = _price;
+
+        //emit event
+        emit List1155NFT(_NFTContract, _tokenId, _amount, _price);
+    }
+
+    function update1155Price(address _NFTContract, uint256 _tokenId, uint256 _amount, uint256 _newPrice) public {
+        if(!ERC1155NFT(_NFTContract).isApprovedForAll(msg.sender, address(this))) {
+            revert notApproved();
+        }
+        if(_amount != _listAmount[_NFTContract][_tokenId][msg.sender]) {
+            revert invalidAmount();
+        }
+        if (_newPrice <= 0) revert mustBiggerThanZero();
+        _priceForUni[_NFTContract][_tokenId][msg.sender] = _newPrice;
+
+        emit Update1155Price(_NFTContract, _tokenId, _amount, _newPrice);
+    }
+    /******************************************************************************************************
+    *                                                                                                     *
+    *                                      Owner's Function                                               *
+    *                                                                                                     *
+    *******************************************************************************************************/
 
     function withdraw() onlyOwner public {
         payable(msg.sender).transfer(address(this).balance);
