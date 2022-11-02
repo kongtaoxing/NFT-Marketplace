@@ -37,6 +37,9 @@ contract NFTMarket {
     // keccak256("ListNFTwithSig(address _NFTContract,uint256 _tokenId,uint256 _price,uint256 nonce,uint256 deadline)")
     bytes32 public constant LIST_TYPEHASH = 0x6f8a295cea3edab22428a30506be6fb57d93dd2ba58973d57bb71c48af8fbc7e;
 
+    // keccak256("List1155NFTwithSig(address _NFTContract,uint256 _tokenId,uint256 _amount,uint256 _price,uint256 nonce,uint256 deadline,)")
+    bytes32 public constant LIST_1155_TYPEHASH = 0x6e26d60c6c726916e1330e3e1cf4377cadf0647943ca5b1ca9f7af218eee1946;
+
     error notApproved();
     error notOwner();
     error insufficientBalance();
@@ -53,6 +56,10 @@ contract NFTMarket {
         bool _listOrNot;
         uint256 _price;
         address _owner;
+    }
+
+    struct NFT1155Detail {
+        string uri;
     }
     
     mapping(address => mapping(uint256 => bool)) _listStatus;
@@ -73,6 +80,8 @@ contract NFTMarket {
     // events for ERC1155
     event List1155NFT(address indexed NFTContract, uint256 indexed tokenId, uint256 indexed amount, uint256 price);
     event Update1155Price(address indexed NFTContract, uint256 indexed tokenId, uint256 amount, uint256 indexed newPrice);
+    event Delist1155NFT(address indexed _NFTContract, uint256 indexed _tokenId, uint256 indexed _amount);
+    event Buy1155NFT(address indexed buyer, address indexed NFTContract, uint256 indexed tokenId);
 
     // events for owner
     event ChangeOwner(address indexed newOwner);
@@ -382,6 +391,81 @@ contract NFTMarket {
         emit List1155NFT(_NFTContract, _tokenId, _amount, _price);
     }
 
+    function list1155NFTwithRsv(address _NFTContract, uint256 _tokenId, uint256 _amount, uint256 _price, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
+        bytes memory sig = new bytes(65);
+        bytes1 temp = bytes1(v);
+        // use buildin assembly to merge r, s, v into hash
+        assembly {
+            mstore(add(sig, 0x20), r)
+            mstore(add(sig, 0x40), s)
+            mstore(add(sig, 0x60), temp)
+        }
+        console.logBytes(sig);
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(LIST_1155_TYPEHASH, _NFTContract, _tokenId, _amount, _price, nonces[sig]++, deadline))
+                // 再使用原来的签名消息就无法再通过验证了（重建的签名消息不正确了），用于防止重放攻击。
+            )
+        );
+        if (nonces[sig] > 1) revert sigAlreadyUsed();
+        address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
+        console.log("Signer's address in solidity: ",ownerOfNFT);
+        if(!ERC1155NFT(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
+            revert notApproved();
+        }
+        if(ERC1155NFT(_NFTContract).balanceOf(ownerOfNFT, _tokenId) < _amount) {
+            revert invalidAmount();
+        }
+        if (_price <= 0) revert mustBiggerThanZero();
+        _listAmount[_NFTContract][_tokenId][msg.sender] = _amount;
+        _priceForUni[_NFTContract][_tokenId][msg.sender] = _price;
+
+        //emit event
+        emit List1155NFT(_NFTContract, _tokenId, _amount, _price);
+    }
+
+    function list1155NFTwithSig(address _NFTContract, uint256 _tokenId, uint256 _amount, uint256 _price, uint256 deadline, bytes memory _signature) public {
+        // 检查签名长度，65是标准r,s,v签名的长度
+        if(_signature.length != 65) revert invalidSigLen();
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        // 目前只能用assembly (内联汇编)来从签名中获得r,s,v的值
+        assembly {
+            // 读取长度数据后的32 bytes
+            r := mload(add(_signature, 0x20))
+            // 读取之后的32 bytes
+            s := mload(add(_signature, 0x40))
+            // 读取最后一个byte
+            v := byte(0, mload(add(_signature, 0x60)))
+        }
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(LIST_1155_TYPEHASH, _NFTContract, _tokenId, _amount, _price, nonces[_signature]++, deadline))
+                // 再使用原来的签名消息就无法再通过验证了（重建的签名消息不正确了），用于防止重放攻击。
+            )
+        );
+        if (nonces[_signature] > 1) revert sigAlreadyUsed();
+        address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
+        if(!ERC1155NFT(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
+            revert notApproved();
+        }
+        if(ERC1155NFT(_NFTContract).balanceOf(ownerOfNFT, _tokenId) < _amount) {
+            revert invalidAmount();
+        }
+        if (_price <= 0) revert mustBiggerThanZero();
+        _listAmount[_NFTContract][_tokenId][msg.sender] = _amount;
+        _priceForUni[_NFTContract][_tokenId][msg.sender] = _price;
+
+        //emit event
+        emit List1155NFT(_NFTContract, _tokenId, _amount, _price);
+    }
+
+
     function update1155Price(address _NFTContract, uint256 _tokenId, uint256 _amount, uint256 _newPrice) public {
         if(!ERC1155NFT(_NFTContract).isApprovedForAll(msg.sender, address(this))) {
             revert notApproved();
@@ -394,6 +478,47 @@ contract NFTMarket {
 
         emit Update1155Price(_NFTContract, _tokenId, _amount, _newPrice);
     }
+
+    function delist1155NFT(address _NFTContract, uint256 _tokenId, uint256 _amount) public {
+        if(_amount > _listAmount[_NFTContract][_tokenId][msg.sender]) {
+            revert invalidAmount();
+        }
+        _listAmount[_NFTContract][_tokenId][msg.sender] -= _amount;
+        if(_listAmount[_NFTContract][_tokenId][msg.sender] == 0) {
+            _priceForUni[_NFTContract][_tokenId][msg.sender] == 0;
+        }
+
+        emit Delist1155NFT(_NFTContract, _tokenId, _amount);
+    }
+
+    function get1155NFTDetails(address _NFTContract, uint256 _amounts) public view returns (NFT1155Detail[] memory) {
+        NFT1155Detail[] memory _detail = new NFT1155Detail[](_amounts); 
+        for (uint256 i = 0; i < _amounts; i++) {
+            _detail[i].uri = ERC1155NFT(_NFTContract).uri(i);
+        }
+        return _detail;
+    }
+
+    // 买家只可出价购买特定卖家的1155NFT，实际匹配在前端进行
+    function buyNFT(address _NFTContract, uint256 _tokenId, address seller, uint256 _amount) public payable {
+        bytes memory data;
+        if(msg.value < _priceForUni[_NFTContract][_tokenId][seller] * _amount) {
+            revert insufficientBalance();
+        }
+        if(_listAmount[_NFTContract][_tokenId][seller] < _amount) {
+            revert invalidAmount();
+        }
+        payable(_isOwner[_NFTContract][_tokenId]).transfer(_priceForUni[_NFTContract][_tokenId][seller] * _amount * 9 / 10);
+        payable(msg.sender).transfer(msg.value - _priceForUni[_NFTContract][_tokenId][seller] * _amount);   //退回多余的ETH
+        ERC1155NFT(_NFTContract).safeTransferFrom(seller, msg.sender, _tokenId, _amount, data);
+        _listAmount[_NFTContract][_tokenId][msg.sender] -= _amount;
+        if(_listAmount[_NFTContract][_tokenId][msg.sender] == 0) {
+            _priceForUni[_NFTContract][_tokenId][msg.sender] == 0;
+        }
+
+        emit Buy1155NFT(msg.sender, _NFTContract, _tokenId);
+    }    
+
     /******************************************************************************************************
     *                                                                                                     *
     *                                      Owner's Function                                               *
