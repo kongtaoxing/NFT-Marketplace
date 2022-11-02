@@ -37,8 +37,8 @@ contract NFTMarket {
     // keccak256("ListNFTwithSig(address _NFTContract,uint256 _tokenId,uint256 _price,uint256 nonce,uint256 deadline)")
     bytes32 public constant LIST_TYPEHASH = 0x6f8a295cea3edab22428a30506be6fb57d93dd2ba58973d57bb71c48af8fbc7e;
 
-    // keccak256("List1155NFTwithSig(address _NFTContract,uint256 _tokenId,uint256 _amount,uint256 _price,uint256 nonce,uint256 deadline,)")
-    bytes32 public constant LIST_1155_TYPEHASH = 0x6e26d60c6c726916e1330e3e1cf4377cadf0647943ca5b1ca9f7af218eee1946;
+    // keccak256("List1155NFTwithSig(address _NFTContract,uint256 _tokenId,uint256 _amount,uint256 _price,uint256 nonce,uint256 deadline)")
+    bytes32 public constant LIST_1155_TYPEHASH = 0xd25b85adae680c5f52344a67dd703bac7e649f9e47fdc157b7b3cbe758f2495c;
 
     error notApproved();
     error notOwner();
@@ -400,7 +400,6 @@ contract NFTMarket {
             mstore(add(sig, 0x40), s)
             mstore(add(sig, 0x60), temp)
         }
-        console.logBytes(sig);
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
@@ -500,7 +499,7 @@ contract NFTMarket {
     }
 
     // 买家只可出价购买特定卖家的1155NFT，实际匹配在前端进行
-    function buyNFT(address _NFTContract, uint256 _tokenId, address seller, uint256 _amount) public payable {
+    function buy1155NFT(address _NFTContract, uint256 _tokenId, address seller, uint256 _amount) public payable {
         bytes memory data;
         if(msg.value < _priceForUni[_NFTContract][_tokenId][seller] * _amount) {
             revert insufficientBalance();

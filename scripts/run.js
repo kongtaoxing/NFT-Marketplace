@@ -109,43 +109,85 @@ const main = async () => {
     console.log('signer addr in js file:', recoveredAddress);
     const _buyWithSig = await marketContract.connect(randomGuy).listNFTwithRsv(nftContract.address, 4, 100, 100, sig.v, sig.r, sig.s);
     await _buyWithSig.wait();
-    await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
-    await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
+    // await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
+    // await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
 
     // to sign this through metamask 
-//     let message = {
-//         domain: {
-//             name: "NFTMarket",
-//             version: "1.0",
-//             chainId: ethereum.chainId,
-//             verifyingContract: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'
-//         },
-//         types: {
-//             EIP712Domain: [
-//                 {name: "name", type: "string" },
-//                 {name: "version", type: "string"},
-//                 {name: "chainId", type: "uint256"},
-//                 {name: "verifyingContract", type: "address"}
-//             ],
-//             ListNFTwithSig: [
-//                 {name: "_NFTContract", type: "address"},
-//                 {name: "_tokenId", type: "uint256"},
-//                 {name: "_price", type: "uint256" },
-//                 {name: "nonce", type: "uint256" },
-//                 {name: "deadline", type: "uint256"}
-//             ],
-//         },
-//         primaryType: "ListNFTwithSig",
-//         message: {
-//             _NFTContract: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
-//             _tokenId: 4,
-//             _price: 100,
-//             nonce: 0,
-//             deadline: 100,
-//         }
-//     };
-// let data = JSON.stringify(message)
-// ethereum.request({method:"eth_signTypedData_v4", params: [ethereum.selectedAddress, data]}).then(console.log)
+    // let message = {
+    //     domain: {
+    //         name: "NFTMarket",
+    //         version: "1.0",
+    //         chainId: ethereum.chainId,
+    //         verifyingContract: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'
+    //     },
+    //     types: {
+    //         EIP712Domain: [
+    //             {name: "name", type: "string" },
+    //             {name: "version", type: "string"},
+    //             {name: "chainId", type: "uint256"},
+    //             {name: "verifyingContract", type: "address"}
+    //         ],
+    //         ListNFTwithSig: [
+    //             {name: "_NFTContract", type: "address"},
+    //             {name: "_tokenId", type: "uint256"},
+    //             {name: "_price", type: "uint256" },
+    //             {name: "nonce", type: "uint256" },
+    //             {name: "deadline", type: "uint256"}
+    //         ],
+    //     },
+    //     primaryType: "ListNFTwithSig",
+    //     message: {
+    //         _NFTContract: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
+    //         _tokenId: 4,
+    //         _price: 100,
+    //         nonce: 0,
+    //         deadline: 100,
+    //     }
+    // };
+    // let data = JSON.stringify(message)
+    // ethereum.request({method:"eth_signTypedData_v4", params: [ethereum.selectedAddress, data]}).then(console.log)
+
+    // debuging 1155
+    const ERC1155ContractFactory = await hre.ethers.getContractFactory("test1155");
+    const ERC1155Contract = await ERC1155ContractFactory.deploy();
+    await ERC1155Contract.deployed();
+
+    const approve1155 = await ERC1155Contract.setApprovalForAll(marketContract.address, true);
+    const list1155Message = {
+        domain: {
+            name: "NFTMarket",
+            version: "1.0",
+            chainId: chainId,
+            verifyingContract: marketContract.address
+        },
+        types: {
+            List1155NFTwithSig: [
+                {name: "_NFTContract", type: "address"},
+                {name: "_tokenId", type: "uint256"},
+                {name: "_amount", type: "uint256"},
+                {name: "_price", type: "uint256"},
+                {name: "nonce", type: "uint256"},
+                {name: "deadline", type: "uint256"},
+            ]
+        },
+        data: {
+            _NFTContract: ERC1155Contract.address,
+            _tokenId: 0,
+            _amount: 50,
+            _price: 100,
+            nonce: 0,
+            deadline: 100
+        }
+    };
+    console.log(list1155Message.domain, list1155Message.types, list1155Message.data);
+    const sign1155 = await guy._signTypedData(list1155Message.domain, list1155Message.types, list1155Message.data);
+    console.log(sign1155);
+    const sigg = ethers.utils.splitSignature(sign1155);
+    console.log(sigg);
+    const siger = ethers.utils.verifyTypedData(list1155Message.domain, list1155Message.types, list1155Message.data, sigg);
+    console.log('signer in js file:', siger);
+    await ERC1155Contract.mint();
+    const velify = await marketContract.connect(randomGuy).list1155NFTwithRsv(ERC1155Contract.address, 0, 50, 100, 100, sigg.v, sigg.r, sigg.s);
 }
 
 const runMain = async () => {

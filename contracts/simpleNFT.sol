@@ -23,8 +23,14 @@ contract testNFT is ERC721 {
     }
 }
 
-contract test1115 is ERC1155 {
+contract test1155 is ERC1155 {
     constructor() ERC1155("test1155") {
         console.log("1155 deployed");
+    }
+
+    function mint() public {
+        bytes memory data;
+        _mint(msg.sender, 0, 100, data);
+        console.log("100 ERC1155 minted to", msg.sender);
     }
 }
