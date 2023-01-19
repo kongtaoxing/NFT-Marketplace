@@ -113,39 +113,60 @@ const main = async () => {
     // await marketContract.connect(randomGuy).listNFTwithSig(nftContract.address, 4, 100, 100, sign);
 
     // to sign this through metamask 
-    // let message = {
-    //     domain: {
-    //         name: "NFTMarket",
-    //         version: "1.0",
-    //         chainId: ethereum.chainId,
-    //         verifyingContract: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266'
-    //     },
-    //     types: {
-    //         EIP712Domain: [
-    //             {name: "name", type: "string" },
-    //             {name: "version", type: "string"},
-    //             {name: "chainId", type: "uint256"},
-    //             {name: "verifyingContract", type: "address"}
+    //  let message = {
+    //     "types": {
+    //         "EIP712Domain": [
+    //             {
+    //                 "name": "name",
+    //                 "type": "string"
+    //             },
+    //             {
+    //                 "name": "version",
+    //                 "type": "string"
+    //             },
+    //             {
+    //                 "name": "verifyingContract",
+    //                 "type": "address"
+    //             },
+    //             {
+    //                 "name": "salt",
+    //                 "type": "bytes32"
+    //             }
     //         ],
-    //         ListNFTwithSig: [
-    //             {name: "_NFTContract", type: "address"},
-    //             {name: "_tokenId", type: "uint256"},
-    //             {name: "_price", type: "uint256" },
-    //             {name: "nonce", type: "uint256" },
-    //             {name: "deadline", type: "uint256"}
-    //         ],
+    //         "MetaTransaction": [
+    //             {
+    //                 "name": "nonce",
+    //                 "type": "uint256"
+    //             },
+    //             {
+    //                 "name": "from",
+    //                 "type": "address"
+    //             },
+    //             {
+    //                 "name": "functionSignature",
+    //                 "type": "bytes"
+    //             }
+    //         ]
     //     },
-    //     primaryType: "ListNFTwithSig",
-    //     message: {
-    //         _NFTContract: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
-    //         _tokenId: 4,
-    //         _price: 100,
-    //         nonce: 0,
-    //         deadline: 100,
+    //     "domain": {
+    //         "name": "USD Coin (PoS)",
+    //         "version": "1",
+    //         "verifyingContract": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+    //         "salt": "0x0000000000000000000000000000000000000000000000000000000000000089"
+    //     },
+    //     "primaryType": "MetaTransaction",
+    //     "message": {
+    //         "nonce": 0,
+    //         "from": "0xca517cb74a099b9f39bfe893fefedd7f3734e8ed",
+    //         "functionSignature": "0x095ea7b30000000000000000000000001f14c2f40400471fb4a3aef1390f6bbbf2ad8f9900000000000000000000000000000000000000000000000000000000000f4240"
     //     }
     // };
-    // let data = JSON.stringify(message)
-    // ethereum.request({method:"eth_signTypedData_v4", params: [ethereum.selectedAddress, data]}).then(console.log)
+    //     let data = JSON.stringify(message)
+    //     signature = await ethereum.request({method:"eth_signTypedData_v4", params: [ethereum.selectedAddress, data]})
+    //     const r = signature.slice(0, 66);
+    //     const s = "0x" + signature.slice(66, 130);
+    //     const v = parseInt(signature.slice(130, 132), 16);
+    //     console.log({ r, s, v });
 
     // debuging 1155
     const ERC1155ContractFactory = await hre.ethers.getContractFactory("test1155");
