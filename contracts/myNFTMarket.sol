@@ -7,7 +7,7 @@ interface NFTContract {
     //basic NFT function
     function balanceOf(address _owner) external view returns (uint256);
     function ownerOf(uint256 _tokenId) external view returns (address);
-    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes data) external payable;
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes memory data) external payable;
     function safeTransferFrom(address _from, address _to, uint256 _tokenId) external payable;
     function transferFrom(address _from, address _to, uint256 _tokenId) external payable;
     function approve(address _approved, uint256 _tokenId) external payable;
@@ -154,7 +154,7 @@ contract NFTMarket {
         );
         if (nonces[sig] > 1) revert sigAlreadyUsed();
         address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
-        console.log("Signer's address in solidity: ",ownerOfNFT);
+        console.log("Signer\'s address in solidity: ",ownerOfNFT);
         if(!NFTContract(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
             revert notApproved();
         }
@@ -195,7 +195,7 @@ contract NFTMarket {
         );
         if (nonces[_signature] > 1) revert sigAlreadyUsed();
         address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
-        console.log("Signer's address: ",ownerOfNFT);
+        console.log("Signer\'s address: ",ownerOfNFT);
         if(!NFTContract(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
             revert notApproved();
         }
@@ -289,7 +289,7 @@ contract NFTMarket {
         );
         if (nonces[sig] > 1) revert sigAlreadyUsed();
         address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
-        console.log("Signer's address in solidity: ",ownerOfNFT);
+        console.log("Signer\'s address in solidity: ",ownerOfNFT);
         if(!NFTContract(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
             revert notApproved();
         }
@@ -324,7 +324,7 @@ contract NFTMarket {
         );
         if (nonces[_signature] > 1) revert sigAlreadyUsed();
         address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
-        console.log("Signer's address: ",ownerOfNFT);
+        console.log("Signer\'s address: ",ownerOfNFT);
         if(!NFTContract(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
             revert notApproved();
         }
@@ -416,7 +416,7 @@ contract NFTMarket {
         );
         if (nonces[sig] > 1) revert sigAlreadyUsed();
         address ownerOfNFT = ecrecover(digest, v, r, s);  //获取消息签名者的地址
-        console.log("Signer's address in solidity: ",ownerOfNFT);
+        console.log("Signer\'s address in solidity: ",ownerOfNFT);
         if(!ERC1155NFT(_NFTContract).isApprovedForAll(ownerOfNFT, address(this))) {
             revert notApproved();
         }
